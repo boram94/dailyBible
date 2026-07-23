@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 말씀</title>
+<style>
+  :root{
+    --paper:#F6F4EE;
+    --ink:#2E3A32;
+    --moss:#5B6F5B;
+    --moss-soft:#8FA48C;
+    --line:#DAD9CF;
+    --accent:#B8722E;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; padding:0; background:transparent; }
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    font-family:'Noto Serif KR','Nanum Myeongjo',serif;
+    padding:16px;
+  }
+  .card{
+    width:100%;
+    max-width:520px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:32px 28px 24px;
+    position:relative;
+    min-height:140px;
+  }
+  .eyebrow{
+    font-family:-apple-system,'Pretendard',sans-serif;
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--moss-soft);
+    text-transform:uppercase;
+    margin:0 0 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .verse{
+    font-size:19px;
+    line-height:1.75;
+    color:var(--ink);
+    margin:0 0 20px;
+    white-space:pre-line;
+  }
+  .verse::before{
+    content:'“';
+    color:var(--accent);
+    font-size:28px;
+    line-height:0;
+    position:relative;
+    top:8px;
+    margin-right:2px;
+  }
+  .ref{
+    font-family:-apple-system,'Pretendard',sans-serif;
+    font-size:13px;
+    color:var(--moss);
+    letter-spacing:.02em;
+    text-align:right;
+    margin:0;
+  }
+  .divider{ border:none; border-top:1px solid var(--line); margin:18px 0 14px; }
+  .refresh{
+    font-family:-apple-system,'Pretendard',sans-serif;
+    font-size:12px;
+    color:var(--moss-soft);
+    background:none;
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:6px 14px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .refresh:hover{ border-color:var(--moss-soft); color:var(--moss); }
+  .refresh:disabled{ opacity:.4; cursor:default; }
+  .foot{ display:flex; justify-content:space-between; align-items:center; }
+  .loading{ color:var(--moss-soft); font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <p class="eyebrow"><span id="date"></span><span>오늘의 말씀</span></p>
+  <p class="verse loading" id="verseText">불러오는 중...</p>
+  <p class="ref" id="verseRef"></p>
+  <hr class="divider">
+  <div class="foot">
+    <span style="font-family:-apple-system,'Pretendard',sans-serif;font-size:11px;color:var(--line);" id="translationLabel"></span>
+    <button class="refresh" id="refreshBtn" onclick="showRandomVerse()" disabled>다른 말씀 보기</button>
+  </div>
+</div>
+
+<script>
+let ALL_VERSES = []; // { text, ref } 형태로 평탄화된 전체 절 목록
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+
+// bible.json 구조: [ { korean, english, testament, chapters: [ { chapterNum, verses: [ { verseNum, verse } ] } ] } ]
+function flattenBible(bookArray){
+  const flat = [];
+  for (const book of bookArray){
+    const bookName = book.korean;
+    for (const chapter of book.chapters){
+      for (const v of chapter.verses){
+        // 너무 짧은 절(1~2어절짜리 계보 나열 등)은 위젯에 부적합하니 최소 길이 필터링
+        if (v.verse && v.verse.length >= 8){
+          flat.push({
+            text: v.verse,
+            ref: `${bookName} ${chapter.chapterNum}:${v.verseNum}`
+          });
+        }
+      }
+    }
+  }
+  return flat;
+}
+
+function renderVerse(v){
+  document.getElementById('verseText').textContent = v.text;
+  document.getElementById('verseText').classList.remove('loading');
+  document.getElementById('verseRef').textContent = v.ref;
+}
+
+function showRandomVerse(){
+  if (!ALL_VERSES.length) return;
+  const v = ALL_VERSES[Math.floor(Math.random() * ALL_VERSES.length)];
+  renderVerse(v);
+}
+
+function showTodayVerse(){
+  const now = new Date();
+  const dayIndex = Math.floor(now.getTime() / 86400000);
+  const v = ALL_VERSES[dayIndex % ALL_VERSES.length];
+  renderVerse(v);
+  document.getElementById('date').textContent =
+    `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
+}
+
+async function init(){
+  try {
+    const res = await fetch('bible.json');
+    const data = await res.json();
+    ALL_VERSES = flattenBible(data);
+    document.getElementById('refreshBtn').disabled = false;
+    showTodayVerse();
+  } catch (e){
+    document.getElementById('verseText').textContent =
+      'bible.json을 불러오지 못했습니다. index.html과 같은 폴더에 있는지 확인해 주세요.';
+    document.getElementById('verseText').classList.remove('loading');
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
