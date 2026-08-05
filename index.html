@@ -20,7 +20,7 @@
     align-items:center;
     justify-content:center;
     min-height:100vh;
-    font-family:-apple-system,'Pretendard',sans-serif;
+    font-family:'Noto Serif KR','Nanum Myeongjo',serif;
     padding:16px;
   }
   .card{
@@ -45,7 +45,7 @@
     align-items:center;
   }
   .verse{
-    font-size:13px;
+    font-size:19px;
     line-height:1.75;
     color:var(--ink);
     margin:0 0 20px;
@@ -54,7 +54,7 @@
   .verse::before{
     content:'“';
     color:var(--accent);
-    font-size:19px;
+    font-size:28px;
     line-height:0;
     position:relative;
     top:8px;
@@ -83,7 +83,7 @@
   .refresh:hover{ border-color:var(--moss-soft); color:var(--moss); }
   .refresh:disabled{ opacity:.4; cursor:default; }
   .foot{ display:flex; justify-content:space-between; align-items:center; }
-  .loading{ color:var(--moss-soft); font-size:12px; }
+  .loading{ color:var(--moss-soft); font-size:14px; }
 </style>
 </head>
 <body>
@@ -136,11 +136,8 @@ function showRandomVerse(){
   renderVerse(v);
 }
 
-function showTodayVerse(){
+function setDateLabel(){
   const now = new Date();
-  const dayIndex = Math.floor(now.getTime() / 86400000);
-  const v = ALL_VERSES[dayIndex % ALL_VERSES.length];
-  renderVerse(v);
   document.getElementById('date').textContent =
     `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
 }
@@ -151,7 +148,8 @@ async function init(){
     const data = await res.json();
     ALL_VERSES = flattenBible(data);
     document.getElementById('refreshBtn').disabled = false;
-    showTodayVerse();
+    setDateLabel();
+    showRandomVerse(); // 페이지를 열 때마다 매번 랜덤하게 표시
   } catch (e){
     document.getElementById('verseText').textContent =
       'bible.json을 불러오지 못했습니다. index.html과 같은 폴더에 있는지 확인해 주세요.';
